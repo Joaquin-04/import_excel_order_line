@@ -11,4 +11,5 @@
     ],
     'installable': True,
     'application': False,
+    'external_dependencies':{'python':['pandas','openpyxl']}
 }
