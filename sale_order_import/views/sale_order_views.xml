@@ -1,0 +1,12 @@
+<odoo>
+    <record id="view_sale_order_form_import_wizard" model="ir.ui.view">
+        <field name="name">sale.order.form.import.wizard</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <header>
+                <button name="action_open_import_wizard" type="object" string="Importar Excel" class="btn-primary" />
+            </header>
+        </field>
+    </record>
+</odoo>
