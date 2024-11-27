@@ -3,6 +3,9 @@ import io
 import pandas as pd
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+import logging
+
+_logger=logging.getLogger(__name__)
 
 class SaleOrderLineImportWizard(models.TransientModel):
     _name = 'sale.order.line.import.wizard'
@@ -31,6 +34,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
             'PRECIO UNITARIO CARPINTERIA', 'CODIGO DISTANCIA /KM', 
             'PRECIO UNITARIO INSTALACION', 'SUBTOTAL UNIDAD', 'SUBTOTAL'
         ]
+        _logger.warning(f"df.columns {df.columns}")
         for column in required_columns:
             if column not in df.columns:
                 raise UserError(f"El archivo Excel debe contener la columna '{column}'")
@@ -61,7 +65,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
                 'price_unit': row['SUBTOTAL UNIDAD'],
                 'x_studio_tipologia': row['TIPOLOGIA'],
                 'x_studio_precio_unitario_carpinteria': row['PRECIO UNITARIO CARPINTERIA'],
-                'x_studio_codigo_distancia': row['CODIGO DISTANCIA /KM'],
+                'x_studio_codigo_distancia_km': row['CODIGO DISTANCIA /KM'],
                 'x_studio_precio_unitario_instalacion': row['PRECIO UNITARIO INSTALACION'],
             })
 
