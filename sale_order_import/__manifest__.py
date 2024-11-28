@@ -8,6 +8,7 @@
     'data': [
         'views/sale_order_views.xml',
         'views/sale_order_line_import_wizard_views.xml',
+        'security/ir.model.access.csv'
     ],
     'installable': True,
     'application': False,

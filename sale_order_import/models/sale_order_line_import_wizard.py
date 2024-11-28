@@ -34,21 +34,24 @@ class SaleOrderLineImportWizard(models.TransientModel):
             'PRECIO UNITARIO CARPINTERIA', 'CODIGO DISTANCIA /KM', 
             'PRECIO UNITARIO INSTALACION', 'SUBTOTAL UNIDAD', 'SUBTOTAL'
         ]
-        _logger.warning(f"df.columns {df.columns}")
+        #_logger.warning(f"df.columns {df.columns}")
         for column in required_columns:
             if column not in df.columns:
                 raise UserError(f"El archivo Excel debe contener la columna '{column}'")
 
+        #_logger.warning(f"filas: {df.iterrows()}")
         # Procesar las filas del archivo
         for _, row in df.iterrows():
             # Buscar o crear producto
             product = self.env['product.product'].search([('default_code', '=', row['CODIGO'])], limit=1)
+            #_logger.warning(f"producto buscado: {product.name} - {product.default_code}")
             if not product:
                 product = self.env['product.product'].create({
                     'name': row['DESCRIPCION'],
                     'default_code': row['CODIGO'],
                     'list_price': row['SUBTOTAL UNIDAD'],  # Precio base
                 })
+                #_logger.warning(f"producto creado: {product.name} - {product.default_code}")
 
             # Calcular subtotal y validar
             calculated_subtotal = row['CANTIDAD'] * row['SUBTOTAL UNIDAD']
@@ -61,6 +64,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
             self.order_id.order_line.create({
                 'order_id': self.order_id.id,
                 'product_id': product.id,
+                'x_studio_descripcion':row['DESCRIPCION'],
                 'product_uom_qty': row['CANTIDAD'],
                 'price_unit': row['SUBTOTAL UNIDAD'],
                 'x_studio_tipologia': row['TIPOLOGIA'],

@@ -4,9 +4,12 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form" />
         <field name="arch" type="xml">
-            <header>
-                <button name="action_open_import_wizard" type="object" string="Importar Excel" class="btn-primary" />
-            </header>
+            <xpath expr="//field[@name='order_line']" position="before">
+                <button name="action_open_import_wizard" 
+                        type="object" 
+                        string="Importar Excel Líneas" 
+                        class="btn-primary oe_highlight" />
+            </xpath>
         </field>
     </record>
 </odoo>
