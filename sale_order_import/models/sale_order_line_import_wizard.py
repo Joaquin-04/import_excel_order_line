@@ -110,7 +110,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
         
             # Buscar o crear el producto
             product = self.env['product.product'].search([('default_code', '=', row['CODIGO'])], limit=1)
-            raise UserError(f"Buscando un producto: {product}")
+            #raise UserError(f"Buscando un producto: {product}")
             if not product:
                 product = self.env['product.product'].create({
                     'name': row.get('NOMBRE DEL PRODUCTO', 'Prod Finalizado sin nombre'),
