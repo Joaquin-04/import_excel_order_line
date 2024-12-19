@@ -30,6 +30,18 @@ class SaleOrderLineImportWizard(models.TransientModel):
         except Exception as e:
             raise UserError(f"Error al leer el archivo Excel: {str(e)}")
 
+        # Filtrar filas no deseadas: filas vacías, cantidad igual a 0 o todas las celdas vacías (' ').
+        df = df.dropna(how='all')  # Elimina filas completamente vacías.
+        df = df[df['CANTIDAD'] != 0]  # Ignora filas donde 'CANTIDAD' es igual a 0.
+        
+        # Función para verificar si todas las celdas de una fila contienen valores vacíos o espacios.
+        def is_row_invalid(row):
+            return all(str(cell).strip() in ['', ' '] for cell in row)
+        
+        # Filtrar filas inválidas.
+        df = df[~df.apply(is_row_invalid, axis=1)]
+        
+        
         # Validar las columnas requeridas
         required_columns = [
             'TIPOLOGIA', 'CANTIDAD', 'CODIGO', 'DESCRIPCION', 
@@ -40,12 +52,30 @@ class SaleOrderLineImportWizard(models.TransientModel):
             if column not in df.columns:
                 raise UserError(f"El archivo Excel debe contener la columna '{column}'")
 
-
-        
+        try:
+            # Convertir campos numéricos y manejar valores inválidos
+            df['CANTIDAD'] = pd.to_numeric(df['CANTIDAD'], errors='coerce').fillna(0)
+            df['SUBTOTAL UNIDAD'] = pd.to_numeric(df['SUBTOTAL UNIDAD'], errors='coerce').fillna(0)
+            df['SUBTOTAL'] = pd.to_numeric(df['SUBTOTAL'], errors='coerce').fillna(0)
+            df['PRECIO UNITARIO CARPINTERIA'] = pd.to_numeric(df['PRECIO UNITARIO CARPINTERIA'], errors='coerce').fillna(0)
+        except Exception as e:
+            raise UserError(f"Error procesando los campos numéricos: {str(e)}")
 
         # Procesar las filas del archivo
         for index, row in df.iterrows():
-            _logger.warning(f"row['CODIGO']: {row['CODIGO']}")
+            #_logger.warning(f"*************************** Index {index+1} ***************************")
+            # Ignorar filas completamente vacías
+            if row.isnull().all():
+                #_logger.warning(f"Fila {index + 2} ignorada porque está completamente vacía.")
+                continue
+            
+            # Terminar la lectura si se encuentra "FIN" en la columna "TIPOLOGIA"
+            if str(row['TIPOLOGIA']).strip().upper() == "FIN":
+                #_logger.warning(f"Lectura terminada al encontrar 'FIN' en la fila {index + 2}.")
+                break
+
+            
+            #_logger.warning(f"row['CODIGO']: {row['CODIGO']}")
             # Validar que los campos obligatorios no estén vacíos
             required_fields = {
                 'CÓDIGO': row['CODIGO'],
@@ -64,28 +94,26 @@ class SaleOrderLineImportWizard(models.TransientModel):
                 if str(row[column]).strip() == '0':
                     raise UserError(
                         f"El campo '{column}' no puede ser '0'. "
-                        f"Error en la fila {index + 1}."
+                        f"Error en la fila {index + 2}."
                     )
         
             for field_name, value in required_fields.items():
                 # Terminar el ciclo si se encuentra una fila completamente vacía
-                if row.isnull().all():
-                    _logger.warning(f"Se encontró una fila completamente vacía en la fila {index + 1}. Terminando el proceso.")
-                    break
 
-                _logger.warning(f"field_name: {field_name}.\nValor : {value}")
+                #_logger.warning(f"field_name: {field_name}.\nValor : {value}")
 
                 if value != 0 and field_name!= 'CÓDIGO':
                     if value == '#VALUE!':
                         raise UserError(
                             f"Tenes un error  '#VALUE!' en el campo '{field_name}'. "
-                            f"\nError en la fila {index + 1}."
+                            f"\nError en la fila {index + 2}."
                         )
                         
-                    if not value or str(value).strip() == '':
+                    #if not value or str(value).strip() == '':
+                    if not value:
                         raise UserError(
                             f"El campo '{field_name}' no debe estar vacío. "
-                            f"Error en la fila {index + 1}."
+                            f"Error en la fila {index + 2}."
                         )
                 
             try:
@@ -100,11 +128,11 @@ class SaleOrderLineImportWizard(models.TransientModel):
                 if calculated_subtotal != subtotal:
                     raise UserError(
                         f"El subtotal calculado ({calculated_subtotal}) no coincide con el valor proporcionado ({subtotal}). "
-                        f"Error en la fila {index + 1}."
+                        f"Error en la fila {index + 2}."
                     )
             except ValueError as e:
                 raise UserError(
-                    f"Error de formato numérico en la fila {index + 1}: {e}. "
+                    f"Error de formato numérico en la fila {index + 2}: {e}. "
                     "Verifique que todos los campos numéricos contengan valores válidos."
                 )
         
@@ -118,17 +146,23 @@ class SaleOrderLineImportWizard(models.TransientModel):
                     'default_code': row['CODIGO'],
                     'list_price': subtotal_unidad,
                 })
-        
-            # Crear la línea de pedido
-            self.order_id.order_line.create({
-                'order_id': self.order_id.id,
-                'product_id': product.id,
-                'x_studio_descripcion': row.get('DESCRIPCION','Sin descripción'),
-                'product_uom_qty': cantidad,
-                'price_unit': subtotal_unidad,
-                'x_studio_tipologia': row['TIPOLOGIA'],
-                'x_studio_precio_unitario_carpinteria': precio_unitario_carp,
-                'x_studio_codigo_distancia_km': row['CODIGO DISTANCIA /KM'],
-                'x_studio_precio_unitario_instalacion': row['PRECIO UNITARIO INSTALACION'],
-            })
+
+            try:
+                # Crear la línea de pedido
+                self.order_id.order_line.create({
+                    'order_id': self.order_id.id,
+                    'product_id': product.id,
+                    'x_studio_descripcion': row.get('DESCRIPCION','Sin descripción'),
+                    'product_uom_qty': cantidad,
+                    'price_unit': subtotal_unidad,
+                    'x_studio_tipologia': row['TIPOLOGIA'],
+                    'x_studio_precio_unitario_carpinteria': precio_unitario_carp,
+                    'x_studio_codigo_distancia_km': row['CODIGO DISTANCIA /KM'],
+                    'x_studio_precio_unitario_instalacion': row['PRECIO UNITARIO INSTALACION'],
+                })
+            except Exception as e:
+                _logger.error(f"Error al crear la línea de pedido: {e}")
+                raise UserError(f"Error al crear la línea de pedido en la fila {index + 2}: {e}")
+
         return {'type': 'ir.actions.act_window_close'}
+
