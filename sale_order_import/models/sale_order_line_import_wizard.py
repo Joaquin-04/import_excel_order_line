@@ -66,16 +66,16 @@ class SaleOrderLineImportWizard(models.TransientModel):
             ##_logger.warning(f"*************************** Index {index+1} ***************************")
             # Ignorar filas completamente vacías
             if row.isnull().all():
-                #_logger.warning(f"Fila {index + 2} ignorada porque está completamente vacía.")
+                ##_logger.warning(f"Fila {index + 2} ignorada porque está completamente vacía.")
                 continue
             
             # Terminar la lectura si se encuentra "FIN" en la columna "TIPOLOGIA"
             if str(row['TIPOLOGIA']).strip().upper() == "FIN":
-                #_logger.warning(f"Lectura terminada al encontrar 'FIN' en la fila {index + 2}.")
+                ##_logger.warning(f"Lectura terminada al encontrar 'FIN' en la fila {index + 2}.")
                 break
 
             
-            #_logger.warning(f"row['CODIGO']: {row['CODIGO']}")
+            ##_logger.warning(f"row['CODIGO']: {row['CODIGO']}")
             # Validar que los campos obligatorios no estén vacíos
             required_fields = {
                 'CÓDIGO': row['CODIGO'],
@@ -100,7 +100,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
             for field_name, value in required_fields.items():
                 # Terminar el ciclo si se encuentra una fila completamente vacía
 
-                #_logger.warning(f"field_name: {field_name}.\nValor : {value}")
+                ##_logger.warning(f"field_name: {field_name}.\nValor : {value}")
 
                 if value != 0 and field_name!= 'CÓDIGO':
                     if value == '#VALUE!':
@@ -144,6 +144,10 @@ class SaleOrderLineImportWizard(models.TransientModel):
                     'name': row.get('NOMBRE DEL PRODUCTO', 'Prod Finalizado sin nombre'),
                     'x_studio_descripcion': row.get('DESCRIPCION','Sin descripción'),
                     'default_code': row['CODIGO'],
+                    'uom_id':27,
+                    'uom_po_id':27,
+                    'categ_id':16036,
+                    'purchase_method':"receive",
                     'list_price': subtotal_unidad,
                 })
 
@@ -165,8 +169,4 @@ class SaleOrderLineImportWizard(models.TransientModel):
                 raise UserError(f"Error al crear la línea de pedido en la fila {index + 2}: {e}")
 
         return {'type': 'ir.actions.act_window_close'}
-
-
-
-
 
