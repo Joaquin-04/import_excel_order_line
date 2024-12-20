@@ -63,7 +63,7 @@ class SaleOrderLineImportWizard(models.TransientModel):
 
         # Procesar las filas del archivo
         for index, row in df.iterrows():
-            #_logger.warning(f"*************************** Index {index+1} ***************************")
+            ##_logger.warning(f"*************************** Index {index+1} ***************************")
             # Ignorar filas completamente vacías
             if row.isnull().all():
                 #_logger.warning(f"Fila {index + 2} ignorada porque está completamente vacía.")
@@ -165,4 +165,8 @@ class SaleOrderLineImportWizard(models.TransientModel):
                 raise UserError(f"Error al crear la línea de pedido en la fila {index + 2}: {e}")
 
         return {'type': 'ir.actions.act_window_close'}
+
+
+
+
 
